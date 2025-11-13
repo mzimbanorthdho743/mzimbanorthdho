@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mzimba North District Health Office</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+    }
+    header {
+      background: linear-gradient(135deg, #2c7da0 0%, #2a9d8f 100%);
+      color: #fff;
+      padding: 0.5rem 0;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .top-bar {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .national-symbols {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .flag-icon {
+      width: 50px;
+      height: auto;
+    }
+    .coat-arms {
+      height: 50px;
+      width: auto;
+      background: #fff;
+      padding: 3px;
+      border-radius: 5px;
+    }
+    .ministry-text {
+      font-size: 0.9rem;
+      text-align: right;
+    }
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo-section h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.3rem;
+    }
+    .logo-section p {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      transition: all 0.3s;
+    }
+    nav a:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    nav a.active {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .hero {
+      background: linear-gradient(135deg, rgba(44, 125, 160, 0.95), rgba(42, 157, 143, 0.95));
+      color: #fff;
+      padding: 5rem 2rem;
+      text-align: center;
+    }
+    .hero h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 1.2rem;
+      max-width: 800px;
+      margin: 0 auto 2rem;
+    }
+    .btn {
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: #fff;
+      color: #2c7da0;
+      font-weight: 600;
+    }
+    .btn-secondary {
+      background: transparent;
+      color: #fff;
+      border: 2px solid #fff;
+      font-weight: 600;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+    section {
+      margin-bottom: 4rem;
+    }
+    h2 {
+      color: #2c7da0;
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 3px solid #2a9d8f;
+    }
+    .profile-overview {
+      background: #f8f9fa;
+      padding: 2rem;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      line-height: 1.8;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #2c7da0, #2a9d8f);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .stat-card h4 {
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.9;
+    }
+    .stat-card .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+    .health-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2rem 0;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .health-table th,
+    .health-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .health-table th {
+      background: linear-gradient(135deg, #2c7da0, #2a9d8f);
+      color: white;
+      font-weight: 600;
+    }
+    .health-table tr:hover {
+      background: #f8f9fa;
+    }
+    .vision-mission-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-left: 4px solid #2a9d8f;
+      transition: transform 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card h3 {
+      color: #2a9d8f;
+      margin-bottom: 1rem;
+    }
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    .news-card {
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s;
+    }
+    .news-card:hover {
+      transform: translateY(-5px);
+    }
+    .news-badge {
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+    }
+    .badge-campaign {
+      background: #2a9d8f;
+      color: #fff;
+    }
+    .badge-alert {
+      background: #e76f51;
+      color: #fff;
+    }
+    .badge-announcement {
+      background: #2c7da0;
+      color: #fff;
+    }
+    .badge-initiative {
+      background: #f4a261;
+      color: #fff;
+    }
+    .news-content {
+      padding: 1.5rem;
+    }
+    .news-card h4 {
+      color: #2c7da0;
+      font-size: 1.3rem;
+      margin-bottom: 0.8rem;
+    }
+    .news-date {
+      color: #666;
+      font-size: 0.85rem;
+      margin-bottom: 0.8rem;
+    }
+    .quick-links {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    .quick-link-card {
+      background: linear-gradient(135deg, #2c7da0, #2a9d8f);
+      color: #fff;
+      padding: 2rem;
+      border-radius: 8px;
+      text-align: center;
+      transition: transform 0.3s;
+      text-decoration: none;
+      display: block;
+    }
+    .quick-link-card:hover {
+      transform: translateY(-5px);
+    }
+    .quick-link-card h3 {
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+    footer {
+      background: #1a5270;
+      color: #fff;
+      padding: 2rem;
+      margin-top: 4rem;
+      text-align: center;
+    }
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin: 1rem 0;
+      flex-wrap: wrap;
+    }
+    .footer-links a {
+      color: #fff;
+      text-decoration: none;
+      opacity: 0.8;
+    }
+    @media (max-width: 768px) {
+      .top-bar,
+      .header-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+        padding: 1rem;
+      }
+      nav ul {
+        flex-direction: column;
+        width: 100%;
+      }
+      nav a {
+        display: block;
+      }
+      .hero h2 {
+        font-size: 1.8rem;
+      }
+      .health-table {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="top-bar">
+      <div class="national-symbols">
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Flag_of_Malawi.svg/320px-Flag_of_Malawi.svg.png"
+          alt="Malawi Flag"
+          class="flag-icon"
+        />
+        <img
+          src="https://i.ibb.co/SDTk3t1X/coatofarms.png"
+          alt="Coat of Arms"
+          class="coat-arms"
+        />
+      </div>
+      <div class="ministry-text">
+        <strong>Republic of Malawi</strong><br />
+        Ministry of Health
+      </div>
+    </div>
+    <div class="header-content">
+      <div class="logo-section">
+        <h1>Mzimba North District Health Office</h1>
+        <p>Promoting Quality Health Services</p>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="index.html" class="active">Home</a></li>
+          <li><a href="team.html">DHMT Team</a></li>
+          <li><a href="services.html">Services</a></li>
+          <li><a href="facilities.html">Facilities</a></li>
+          <li><a href="programs.html">Programs</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h2>Welcome to Mzimba North District Health Office</h2>
+    <p>
+      Promoting and providing high quality sustainable curative, preventive
+      health services in a professional and ethical manner
+    </p>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap">
+      <a href="services.html" class="btn btn-primary">Our Services</a>
+      <a href="contact.html" class="btn btn-secondary">Contact Us</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <section>
+      <h2>District Profile</h2>
+      <div id="profileContent">
+        <p style="text-align: center; padding: 2rem; color: #666;">Loading district profile...</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>About Us</h2>
+      <p>
+        Mzimba North District Health Office operates under the secondary level
+        of the health system in Malawi, led by the Ministry of Health. We are
+        responsible for the overall health of the district, including public
+        health initiatives and management of health facilities.
+      </p>
+      <div class="vision-mission-grid">
+        <div class="card">
+          <h3>National Vision</h3>
+          <p>
+            To improve the health status of Malawians through the provision of
+            effective, efficient and safe health care (Vision 2020, 1999).
+          </p>
+        </div>
+        <div class="card">
+          <h3>Our District Vision</h3>
+          <p>
+            To promote and provide high quality sustainable curative, preventive
+            health services in a professional and ethical manner using the
+            available resources to reduce morbidity and mortality rate.
+          </p>
+        </div>
+        <div class="card">
+          <h3>National Mission</h3>
+          <p>
+            To stabilise and improve the health status of Malawians by improving
+            access, quantity, cost effectiveness and quality of the EHP and
+            related health services.
+          </p>
+        </div>
+        <div class="card">
+          <h3>National Goal</h3>
+          <p>
+            To raise the level of health status of all Malawians by reducing the
+            incidence of illness and occurrence of premature death in the
+            population (PRSP).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Latest News & Updates</h2>
+      <div class="news-grid" id="newsGrid">
+        <p style="text-align: center; padding: 2rem">Loading news...</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Quick Access</h2>
+      <div class="quick-links">
+        <a href="team.html" class="quick-link-card">
+          <h3>👥 DHMT Team</h3>
+          <p>Meet our professionals</p>
+        </a>
+        <a href="services.html" class="quick-link-card">
+          <h3>🏥 Our Services</h3>
+          <p>Health services we provide</p>
+        </a>
+        <a href="facilities.html" class="quick-link-card">
+          <h3>🏢 Facilities</h3>
+          <p>Health facilities</p>
+        </a>
+        <a href="programs.html" class="quick-link-card">
+          <h3>📋 Programs</h3>
+          <p>Health programs</p>
+        </a>
+        <a href="contact.html" class="quick-link-card">
+          <h3>📞 Contact Us</h3>
+          <p>Get in touch</p>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="team.html">Team</a>
+      <a href="services.html">Services</a>
+      <a href="facilities.html">Facilities</a>
+      <a href="programs.html">Programs</a>
+      <a href="contact.html">Contact</a>
+    </div>
+    <p>&copy; 2025 Mzimba North District Health Office | Ministry of Health, Malawi</p>
+  </footer>
+
+  <script>
+    const SUPABASE_URL = "https://mzynkjygwyuhroitgnxm.supabase.co";
+    const SUPABASE_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16eW5ranlnd3l1aHJvaXRnbnhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0NTQwNzksImV4cCI6MjA3ODAzMDA3OX0.L_EPY7Rv8-H6FCi6vg5pD2KICupCed5PK84gF1bTD-w";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function loadDistrictProfile() {
+      const { data } = await supabase
+        .from("district_profile")
+        .select("*")
+        .limit(1)
+        .single();
+
+      const profileContent = document.getElementById("profileContent");
+
+      if (!data) {
+        profileContent.innerHTML = '<p style="text-align:center; color: #666;">District profile not available. Please add it in admin panel.</p>';
+        return;
+      }
+
+      profileContent.innerHTML = `
+        <div class="profile-overview">
+          <p>${data.overview}</p>
+        </div>
+
+        <h3 style="color: #2c7da0; margin: 2rem 0 1rem;">Population Indicators</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h4>Total Population</h4>
+            <div class="stat-number">${data.population}</div>
+          </div>
+          <div class="stat-card">
+            <h4>Under-five Population</h4>
+            <div class="stat-number">${data.under_five}</div>
+          </div>
+          <div class="stat-card">
+            <h4>Under-one Population</h4>
+            <div class="stat-number">${data.under_one}</div>
+          </div>
+          <div class="stat-card">
+            <h4>Expected Deliveries</h4>
+            <div class="stat-number">${data.deliveries}</div>
+          </div>
+          <div class="stat-card">
+            <h4>Women of Childbearing Age</h4>
+            <div class="stat-number">${data.women_childbearing}</div>
+          </div>
+        </div>
+
+        <h3 style="color: #2c7da0; margin: 2rem 0 1rem;">Top Causes of Outpatient Visits (2024)</h3>
+        <table class="health-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Condition</th>
+              <th>Burden</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Malaria</td>
+              <td>30% of OPD visits</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Acute Respiratory Infection</td>
+              <td>8%</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Skin Infections</td>
+              <td>4%</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Diarrheal Diseases</td>
+              <td>2%</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Oral Health Conditions</td>
+              <td>2%</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function loadNews() {
+      const { data } = await supabase
+        .from("news")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(3);
+
+      const newsGrid = document.getElementById("newsGrid");
+
+      if (!data || data.length === 0) {
+        newsGrid.innerHTML = '<p style="text-align:center;">No news available.</p>';
+        return;
+      }
+
+      const typeClasses = {
+        campaign: "badge-campaign",
+        alert: "badge-alert",
+        announcement: "badge-announcement",
+        initiative: "badge-initiative",
+      };
+
+      const typeLabels = {
+        campaign: "Health Campaign",
+        alert: "Health Alert",
+        announcement: "Announcement",
+        initiative: "Health Initiative",
+      };
+
+      newsGrid.innerHTML = data
+        .map(
+          (item) => `
+        <div class="news-card">
+          <div class="news-content">
+            <span class="news-badge ${typeClasses[item.type]}">
+              ${typeLabels[item.type]}
+            </span>
+            <h4>${item.title}</h4>
+            <div class="news-date">
+              ${new Date(item.date).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </div>
+            <p>${item.content}</p>
+          </div>
+        </div>`
+        )
+        .join("");
+    }
+
+    window.addEventListener("load", () => {
+      loadDistrictProfile();
+      loadNews();
+    });
+  </script>
+</body>
+</html>

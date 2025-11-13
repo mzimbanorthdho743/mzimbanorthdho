@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Mzimba North DHO</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
+        .admin-header { background: linear-gradient(135deg, #2c7da0 0%, #2a9d8f 100%); color: white; padding: 1.5rem 2rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .admin-header h1 { font-size: 1.8rem; margin-bottom: 0.3rem; }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
+        .login-container { max-width: 400px; margin: 4rem auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .login-container h2 { color: #2c7da0; margin-bottom: 1.5rem; text-align: center; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem; font-family: inherit; }
+        .form-group textarea { min-height: 120px; resize: vertical; }
+        .btn { padding: 0.8rem 2rem; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; transition: all 0.3s; font-weight: 600; }
+        .btn-primary { background: linear-gradient(135deg, #2c7da0, #2a9d8f); color: white; width: 100%; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .btn-secondary { background: #666; color: white; margin-left: 1rem; }
+        .btn-danger { background: #e76f51; color: white; }
+        .btn-small { padding: 0.5rem 1rem; font-size: 0.9rem; }
+        .admin-tabs { display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid #e0e0e0; flex-wrap: wrap; }
+        .admin-tab { padding: 1rem 2rem; background: none; border: none; cursor: pointer; font-size: 1rem; color: #666; border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .admin-tab.active { color: #2c7da0; border-bottom-color: #2c7da0; }
+        .admin-section { display: none; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .admin-section.active { display: block; }
+        .admin-section h3 { color: #2c7da0; margin-bottom: 1.5rem; }
+        .success-message { background: #d4edda; color: #155724; padding: 1rem; border-radius: 5px; margin-bottom: 1rem; display: none; }
+        .success-message.show { display: block; }
+        .info-box { background: #e7f3ff; border-left: 4px solid #2c7da0; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+        .manage-list { margin-top: 2rem; }
+        .manage-item { background: #f8f9fa; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .manage-item-content { flex: 1; }
+        .manage-item-actions { display: flex; gap: 0.5rem; }
+        .logout-btn { background: #e76f51; color: white; padding: 0.5rem 1.5rem; border: none; border-radius: 5px; cursor: pointer; }
+        .loading { text-align: center; padding: 2rem; color: #666; }
+        @media (max-width: 768px) {
+            .admin-tabs { flex-direction: column; }
+            .manage-item { flex-direction: column; align-items: flex-start; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loginSection">
+        <div class="login-container">
+            <h2>🔐 Admin Login</h2>
+            <div class="info-box">
+                <strong>Admin Access</strong><br>
+                Enter password to manage website
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="adminPassword" placeholder="Enter password" onkeypress="if(event.key==='Enter') loginAdmin()">
+            </div>
+            <button class="btn btn-primary" onclick="loginAdmin()">Login</button>
+            <div class="info-box" style="margin-top: 1rem;">
+                <strong>Default:</strong> mzimba2025
+            </div>
+        </div>
+    </div>
+
+    <div id="adminPanel" style="display: none;">
+        <div class="admin-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <h1>Admin Panel</h1>
+                    <p>Manage Website Content</p>
+                </div>
+                <button class="logout-btn" onclick="logoutAdmin()">Logout</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <div id="successMessage" class="success-message"></div>
+
+            <div class="admin-tabs">
+                <button class="admin-tab active" onclick="switchTab('news')">📰 News</button>
+                <button class="admin-tab" onclick="switchTab('team')">👥 Team</button>
+                <button class="admin-tab" onclick="switchTab('services')">🏥 Services</button>
+                <button class="admin-tab" onclick="switchTab('facilities')">🏢 Facilities</button>
+                <button class="admin-tab" onclick="switchTab('contact')">📞 Contact</button>
+                <button class="admin-tab" onclick="switchTab('settings')">⚙️ Settings</button>
+            </div>
+
+            <!-- News Section -->
+            <div class="admin-section active" id="newsSection">
+                <h3>Manage News</h3>
+                <form id="newsForm" onsubmit="addNews(event)">
+                    <div class="form-group">
+                        <label>Type</label>
+                        <select id="newsType">
+                            <option value="campaign">Health Campaign</option>
+                            <option value="alert">Health Alert</option>
+                            <option value="announcement">Announcement</option>
+                            <option value="initiative">Health Initiative</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="newsTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="newsDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Content</label>
+                        <textarea id="newsContent" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add News</button>
+                </form>
+                <div class="manage-list">
+                    <h3>Current News</h3>
+                    <div id="newsList" class="loading">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Team Section -->
+            <div class="admin-section" id="teamSection">
+                <h3>Manage Team</h3>
+                <form id="teamForm" onsubmit="addTeamMember(event)">
+                    <input type="hidden" id="teamEditId">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" id="teamName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <input type="text" id="teamRole" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" id="teamPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email (Optional)</label>
+                        <input type="email" id="teamEmail">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="resetTeamForm()">Cancel</button>
+                </form>
+                <div class="manage-list">
+                    <h3>Current Team</h3>
+                    <div id="teamList" class="loading">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Services Section -->
+            <div class="admin-section" id="servicesSection">
+                <h3>Manage Services</h3>
+                <form id="serviceForm" onsubmit="addService(event)">
+                    <div class="form-group">
+                        <label>Service Name</label>
+                        <input type="text" id="serviceName" placeholder="e.g., TB, ART, Malaria" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Service</button>
+                </form>
+                <div class="manage-list">
+                    <h3>Current Services</h3>
+                    <div id="servicesList" class="loading">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Facilities Section -->
+            <div class="admin-section" id="facilitiesSection">
+                <h3>Manage Facilities</h3>
+                <form id="facilityForm" onsubmit="addFacility(event)">
+                    <div class="form-group">
+                        <label>Facility Name</label>
+                        <input type="text" id="facilityName" placeholder="e.g., Mzuzu Central Hospital" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Facility</button>
+                </form>
+                <div class="manage-list">
+                    <h3>Current Facilities</h3>
+                    <div id="facilitiesList" class="loading">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Contact Section -->
+            <div class="admin-section" id="contactSection">
+                <h3>Update Contact</h3>
+                <form id="contactForm" onsubmit="updateContact(event)">
+                    <input type="hidden" id="contactId">
+                    <div class="form-group">
+                        <label>Postal Address</label>
+                        <textarea id="contactAddress" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Office Hours</label>
+                        <input type="text" id="contactHours" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Main Contact Person</label>
+                        <input type="text" id="contactPerson" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" id="contactPhone" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </form>
+            </div>
+
+            <!-- Settings Section -->
+            <div class="admin-section" id="settingsSection">
+                <h3>Settings</h3>
+                <div class="info-box">Change password for security</div>
+                <form onsubmit="changePassword(event)">
+                    <div class="form-group">
+                        <label>Current Password</label>
+                        <input type="password" id="currentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" id="newPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm</label>
+                        <input type="password" id="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Change Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://mzynkjygwyuhroitgnxm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16eW5ranlnd3l1aHJvaXRnbnhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0NTQwNzksImV4cCI6MjA3ODAzMDA3OX0.L_EPY7Rv8-H6FCi6vg5pD2KICupCed5PK84gF1bTD-w';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        if (!localStorage.getItem('admin_password')) localStorage.setItem('admin_password', 'mzimba2025');
+
+        function loginAdmin() {
+            if (document.getElementById('adminPassword').value === localStorage.getItem('admin_password')) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadAllData();
+            } else alert('Incorrect password!');
+        }
+
+        function logoutAdmin() {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('adminPassword').value = '';
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Section').classList.add('active');
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('successMessage');
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        // News functions
+        async function addNews(e) {
+            e.preventDefault();
+            const { error } = await supabase.from('news').insert([{
+                type: document.getElementById('newsType').value,
+                title: document.getElementById('newsTitle').value,
+                date: document.getElementById('newsDate').value,
+                content: document.getElementById('newsContent').value
+            }]);
+            if (error) alert('Error: ' + error.message);
+            else {
+                showSuccess('News added!');
+                document.getElementById('newsForm').reset();
+                document.getElementById('newsDate').valueAsDate = new Date();
+                loadNewsList();
+            }
+        }
+
+        async function loadNewsList() {
+            const { data } = await supabase.from('news').select('*').order('created_at', { ascending: false });
+            const list = document.getElementById('newsList');
+            if (!data || data.length === 0) { list.innerHTML = '<p>No news.</p>'; return; }
+            list.innerHTML = data.map(i => `
+                <div class="manage-item">
+                    <div class="manage-item-content"><strong>${i.title}</strong><br><small>${new Date(i.date).toLocaleDateString()}</small></div>
+                    <div class="manage-item-actions"><button class="btn btn-danger btn-small" onclick="deleteNews(${i.id})">Delete</button></div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteNews(id) {
+            if (!confirm('Delete?')) return;
+            await supabase.from('news').delete().eq('id', id);
+            showSuccess('Deleted!');
+            loadNewsList();
+        }
+
+        // Team functions
+        async function addTeamMember(e) {
+            e.preventDefault();
+            const id = document.getElementById('teamEditId').value;
+            const member = {
+                name: document.getElementById('teamName').value,
+                role: document.getElementById('teamRole').value,
+                phone: document.getElementById('teamPhone').value,
+                email: document.getElementById('teamEmail').value || ''
+            };
+            if (id) {
+                await supabase.from('team').update(member).eq('id', id);
+                showSuccess('Updated!');
+            } else {
+                await supabase.from('team').insert([member]);
+                showSuccess('Added!');
+            }
+            resetTeamForm();
+            loadTeamList();
+        }
+
+        function resetTeamForm() {
+            document.getElementById('teamForm').reset();
+            document.getElementById('teamEditId').value = '';
+        }
+
+        async function loadTeamList() {
+            const { data } = await supabase.from('team').select('*').order('created_at', { ascending: true });
+            const list = document.getElementById('teamList');
+            if (!data || data.length === 0) { list.innerHTML = '<p>No team.</p>'; return; }
+            list.innerHTML = data.map(m => `
+                <div class="manage-item">
+                    <div class="manage-item-content"><strong>${m.name}</strong> - ${m.role}<br><small>${m.phone}${m.email ? ' | ' + m.email : ''}</small></div>
+                    <div class="manage-item-actions">
+                        <button class="btn btn-primary btn-small" onclick="editTeam(${m.id}, '${m.name.replace(/'/g, "\\'")}', '${m.role.replace(/'/g, "\\'")}', '${m.phone}', '${m.email}')">Edit</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteTeam(${m.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function editTeam(id, name, role, phone, email) {
+            document.getElementById('teamEditId').value = id;
+            document.getElementById('teamName').value = name;
+            document.getElementById('teamRole').value = role;
+            document.getElementById('teamPhone').value = phone;
+            document.getElementById('teamEmail').value = email;
+            window.scrollTo(0, 0);
+        }
+
+        async function deleteTeam(id) {
+            if (!confirm('Delete?')) return;
+            await supabase.from('team').delete().eq('id', id);
+            showSuccess('Deleted!');
+            loadTeamList();
+        }
+
+        // Services functions
+        async function addService(e) {
+            e.preventDefault();
+            await supabase.from('services').insert([{ name: document.getElementById('serviceName').value }]);
+            showSuccess('Service added!');
+            document.getElementById('serviceForm').reset();
+            loadServicesList();
+        }
+
+        async function loadServicesList() {
+            const { data } = await supabase.from('services').select('*').order('display_order', { ascending: true });
+            const list = document.getElementById('servicesList');
+            if (!data || data.length === 0) { list.innerHTML = '<p>No services.</p>'; return; }
+            list.innerHTML = data.map(s => `
+                <div class="manage-item">
+                    <div class="manage-item-content"><strong>${s.name}</strong></div>
+                    <div class="manage-item-actions"><button class="btn btn-danger btn-small" onclick="deleteService(${s.id})">Delete</button></div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteService(id) {
+            if (!confirm('Delete?')) return;
+            await supabase.from('services').delete().eq('id', id);
+            showSuccess('Deleted!');
+            loadServicesList();
+        }
+
+        // Facilities functions
+        async function addFacility(e) {
+            e.preventDefault();
+            await supabase.from('facilities').insert([{ name: document.getElementById('facilityName').value }]);
+            showSuccess('Facility added!');
+            document.getElementById('facilityForm').reset();
+            loadFacilitiesList();
+        }
+
+        async function loadFacilitiesList() {
+            const { data } = await supabase.from('facilities').select('*').order('display_order', { ascending: true });
+            const list = document.getElementById('facilitiesList');
+            if (!data || data.length === 0) { list.innerHTML = '<p>No facilities.</p>'; return; }
+            list.innerHTML = data.map(f => `
+                <div class="manage-item">
+                    <div class="manage-item-content"><strong>${f.name}</strong></div>
+                    <div class="manage-item-actions"><button class="btn btn-danger btn-small" onclick="deleteFacility(${f.id})">Delete</button></div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteFacility(id) {
+            if (!confirm('Delete?')) return;
+            await supabase.from('facilities').delete().eq('id', id);
+            showSuccess('Deleted!');
+            loadFacilitiesList();
+        }
+
+        // Contact functions
+        async function updateContact(e) {
+            e.preventDefault();
+            const id = document.getElementById('contactId').value;
+            await supabase.from('contact').update({
+                address: document.getElementById('contactAddress').value,
+                hours: document.getElementById('contactHours').value,
+                person: document.getElementById('contactPerson').value,
+                phone: document.getElementById('contactPhone').value
+            }).eq('id', id);
+            showSuccess('Contact updated!');
+        }
+
+        async function loadContact() {
+            const { data } = await supabase.from('contact').select('*').limit(1).single();
+            if (data) {
+                document.getElementById('contactId').value = data.id;
+                document.getElementById('contactAddress').value = data.address;
+                document.getElementById('contactHours').value = data.hours;
+                document.getElementById('contactPerson').value = data.person;
+                document.getElementById('contactPhone').value = data.phone;
+            }
+        }
+
+        // Password
+        function changePassword(e) {
+            e.preventDefault();
+            const current = document.getElementById('currentPassword').value;
+            const newPass = document.getElementById('newPassword').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            
+            if (current !== localStorage.getItem('admin_password')) {
+                alert('Current password incorrect!');
+                return;
+            }
+            if (newPass !== confirm) {
+                alert('Passwords do not match!');
+                return;
+            }
+            localStorage.setItem('admin_password', newPass);
+            showSuccess('Password changed!');
+            e.target.reset();
+        }
+
+        function loadAllData() {
+            loadNewsList();
+            loadTeamList();
+            loadServicesList();
+            loadFacilitiesList();
+            loadContact();
+            document.getElementById('newsDate').valueAsDate = new Date();
+        }
+    </script>
+</body>
+</html>

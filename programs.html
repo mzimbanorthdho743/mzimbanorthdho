@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programs - Mzimba North DHO</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }
+        header { background: linear-gradient(135deg, #2c7da0 0%, #2a9d8f 100%); color: white; padding: 0.5rem 0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .top-bar { max-width: 1200px; margin: 0 auto; padding: 0.5rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .national-symbols { display: flex; align-items: center; gap: 1.5rem; }
+        .flag-icon { width: 50px; height: auto; }
+        .coat-arms { height: 50px; width: auto; background: white; padding: 3px; border-radius: 5px; }
+        .ministry-text { font-size: 0.9rem; text-align: right; }
+        .header-content { max-width: 1200px; margin: 0 auto; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .logo-section h1 { font-size: 1.8rem; margin-bottom: 0.3rem; }
+        .logo-section p { font-size: 0.9rem; opacity: 0.9; }
+        nav ul { list-style: none; display: flex; gap: 1.5rem; flex-wrap: wrap; }
+        nav a { color: white; text-decoration: none; font-weight: 500; padding: 0.5rem 1rem; border-radius: 5px; transition: all 0.3s; }
+        nav a:hover { background: rgba(255,255,255,0.2); }
+        nav a.active { background: rgba(255,255,255,0.3); }
+        .page-header { background: linear-gradient(135deg, #2c7da0, #2a9d8f); color: white; padding: 3rem 2rem; text-align: center; }
+        .page-header h2 { font-size: 2.5rem; margin-bottom: 1rem; color: white; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem; }
+        .programs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-top: 2rem; }
+        .program-item { background: linear-gradient(135deg, #2c7da0, #2a9d8f); color: white; padding: 1.5rem 1rem; border-radius: 6px; text-align: center; font-weight: 500; transition: transform 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .program-item:hover { transform: scale(1.05); }
+        .error-msg { background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 5px; margin: 2rem 0; }
+        footer { background: #1a5270; color: white; padding: 2rem; margin-top: 4rem; text-align: center; }
+        .footer-links { display: flex; justify-content: center; gap: 2rem; margin: 1rem 0; flex-wrap: wrap; }
+        .footer-links a { color: white; text-decoration: none; opacity: 0.8; }
+        @media (max-width: 768px) {
+            .top-bar, .header-content { flex-direction: column; text-align: center; gap: 1rem; padding: 1rem; }
+            nav ul { flex-direction: column; width: 100%; }
+            nav a { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="top-bar">
+            <div class="national-symbols">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Flag_of_Malawi.svg/320px-Flag_of_Malawi.svg.png" alt="Malawi Flag" class="flag-icon">
+                <img src="https://i.ibb.co/SDTk3t1X/coatofarms.png" alt="Coat of Arms" class="coat-arms">
+            </div>
+            <div class="ministry-text"><strong>Republic of Malawi</strong><br>Ministry of Health</div>
+        </div>
+        <div class="header-content">
+            <div class="logo-section">
+                <h1>Mzimba North District Health Office</h1>
+                <p>Promoting Quality Health Services</p>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="team.html">DHMT Team</a></li>
+                    <li><a href="services.html">Services</a></li>
+                    <li><a href="facilities.html">Facilities</a></li>
+                    <li><a href="programs.html" class="active">Programs</a></li>
+                    <li><a href="contact.html">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="page-header">
+        <h2>Health Programs</h2>
+        <p>Comprehensive health programs across Mzimba North District</p>
+    </div>
+
+    <div class="container">
+        <div id="errorMsg"></div>
+        <div class="programs-grid" id="programsGrid"><p style="text-align: center; padding: 2rem;">Loading programs...</p></div>
+    </div>
+
+    <footer>
+        <div class="footer-links">
+            <a href="index.html">Home</a>
+            <a href="team.html">Team</a>
+            <a href="services.html">Services</a>
+            <a href="facilities.html">Facilities</a>
+            <a href="programs.html">Programs</a>
+            <a href="contact.html">Contact</a>
+        </div>
+        <p>&copy; 2025 Mzimba North District Health Office | Ministry of Health, Malawi</p>
+    </footer>
+
+    <script>
+        const SUPABASE_URL = 'https://mzynkjygwyuhroitgnxm.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16eW5ranlnd3l1aHJvaXRnbnhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0NTQwNzksImV4cCI6MjA3ODAzMDA3OX0.L_EPY7Rv8-H6FCi6vg5pD2KICupCed5PK84gF1bTD-w';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function loadPrograms() {
+            try {
+                console.log('Loading programs...');
+                const { data, error } = await supabase.from('programs').select('*').order('display_order', { ascending: true });
+                
+                console.log('Programs response:', { data, error });
+                
+                const grid = document.getElementById('programsGrid');
+                const errorMsg = document.getElementById('errorMsg');
+                
+                if (error) {
+                    console.error('Error loading programs:', error);
+                    errorMsg.innerHTML = `<div class="error-msg">Error loading programs: ${error.message}</div>`;
+                    grid.innerHTML = '<p style="text-align: center;">Unable to load programs. Please check admin panel.</p>';
+                    return;
+                }
+                
+                if (!data || data.length === 0) {
+                    grid.innerHTML = '<p style="text-align: center;">No programs available. Please add programs in admin panel.</p>';
+                    return;
+                }
+                
+                grid.innerHTML = data.map(p => `<div class="program-item">${p.name}</div>`).join('');
+            } catch (err) {
+                console.error('Unexpected error:', err);
+                document.getElementById('programsGrid').innerHTML = '<p style="text-align: center;">Error loading programs.</p>';
+            }
+        }
+        window.addEventListener('load', loadPrograms);
+    </script>
+</body>
+</html>
