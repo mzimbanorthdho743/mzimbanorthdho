@@ -57,9 +57,6 @@
                 <input type="password" id="adminPassword" placeholder="Enter password" onkeypress="if(event.key==='Enter') loginAdmin()">
             </div>
             <button class="btn btn-primary" onclick="loginAdmin()">Login</button>
-            <div class="info-box" style="margin-top: 1rem;">
-                <strong>Default:</strong> mzimba2025
-            </div>
         </div>
     </div>
 
@@ -78,16 +75,51 @@
             <div id="successMessage" class="success-message"></div>
 
             <div class="admin-tabs">
-                <button class="admin-tab active" onclick="switchTab('news')">📰 News</button>
+                <button class="admin-tab active" onclick="switchTab('profile')">📊 District Profile</button>
+                <button class="admin-tab" onclick="switchTab('news')">📰 News</button>
                 <button class="admin-tab" onclick="switchTab('team')">👥 Team</button>
                 <button class="admin-tab" onclick="switchTab('services')">🏥 Services</button>
                 <button class="admin-tab" onclick="switchTab('facilities')">🏢 Facilities</button>
+                <button class="admin-tab" onclick="switchTab('programs')">📋 Programs</button>
                 <button class="admin-tab" onclick="switchTab('contact')">📞 Contact</button>
                 <button class="admin-tab" onclick="switchTab('settings')">⚙️ Settings</button>
             </div>
 
+            <!-- District Profile Section -->
+            <div class="admin-section active" id="profileSection">
+                <h3>Manage District Profile</h3>
+                <form id="profileForm" onsubmit="updateProfile(event)">
+                    <input type="hidden" id="profileId">
+                    <div class="form-group">
+                        <label>District Overview</label>
+                        <textarea id="profileOverview" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Total Population</label>
+                        <input type="text" id="profilePopulation" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Under-five Population</label>
+                        <input type="text" id="profileUnderFive" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Under-one Population</label>
+                        <input type="text" id="profileUnderOne" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Expected Deliveries</label>
+                        <input type="text" id="profileDeliveries" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Women of Childbearing Age</label>
+                        <input type="text" id="profileWomen" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Profile</button>
+                </form>
+            </div>
+
             <!-- News Section -->
-            <div class="admin-section active" id="newsSection">
+            <div class="admin-section" id="newsSection">
                 <h3>Manage News</h3>
                 <form id="newsForm" onsubmit="addNews(event)">
                     <div class="form-group">
@@ -181,6 +213,22 @@
                 </div>
             </div>
 
+            <!-- Programs Section -->
+            <div class="admin-section" id="programsSection">
+                <h3>Manage Programs</h3>
+                <form id="programForm" onsubmit="addProgram(event)">
+                    <div class="form-group">
+                        <label>Program Name</label>
+                        <input type="text" id="programName" placeholder="e.g., NDC, TB, ART" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Program</button>
+                </form>
+                <div class="manage-list">
+                    <h3>Current Programs</h3>
+                    <div id="programsList" class="loading">Loading...</div>
+                </div>
+            </div>
+
             <!-- Contact Section -->
             <div class="admin-section" id="contactSection">
                 <h3>Update Contact</h3>
@@ -262,6 +310,40 @@
             el.textContent = msg;
             el.classList.add('show');
             setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        // District Profile functions
+        async function updateProfile(e) {
+            e.preventDefault();
+            const id = document.getElementById('profileId').value;
+            const profile = {
+                overview: document.getElementById('profileOverview').value,
+                population: document.getElementById('profilePopulation').value,
+                under_five: document.getElementById('profileUnderFive').value,
+                under_one: document.getElementById('profileUnderOne').value,
+                deliveries: document.getElementById('profileDeliveries').value,
+                women_childbearing: document.getElementById('profileWomen').value
+            };
+            if (id) {
+                await supabase.from('district_profile').update(profile).eq('id', id);
+            } else {
+                await supabase.from('district_profile').insert([profile]);
+            }
+            showSuccess('Profile updated!');
+            loadProfile();
+        }
+
+        async function loadProfile() {
+            const { data } = await supabase.from('district_profile').select('*').limit(1).single();
+            if (data) {
+                document.getElementById('profileId').value = data.id;
+                document.getElementById('profileOverview').value = data.overview;
+                document.getElementById('profilePopulation').value = data.population;
+                document.getElementById('profileUnderFive').value = data.under_five;
+                document.getElementById('profileUnderOne').value = data.under_one;
+                document.getElementById('profileDeliveries').value = data.deliveries;
+                document.getElementById('profileWomen').value = data.women_childbearing;
+            }
         }
 
         // News functions
@@ -414,6 +496,34 @@
             loadFacilitiesList();
         }
 
+        // Programs functions
+        async function addProgram(e) {
+            e.preventDefault();
+            await supabase.from('programs').insert([{ name: document.getElementById('programName').value }]);
+            showSuccess('Program added!');
+            document.getElementById('programForm').reset();
+            loadProgramsList();
+        }
+
+        async function loadProgramsList() {
+            const { data } = await supabase.from('programs').select('*').order('display_order', { ascending: true });
+            const list = document.getElementById('programsList');
+            if (!data || data.length === 0) { list.innerHTML = '<p>No programs.</p>'; return; }
+            list.innerHTML = data.map(p => `
+                <div class="manage-item">
+                    <div class="manage-item-content"><strong>${p.name}</strong></div>
+                    <div class="manage-item-actions"><button class="btn btn-danger btn-small" onclick="deleteProgram(${p.id})">Delete</button></div>
+                </div>
+            `).join('');
+        }
+
+        async function deleteProgram(id) {
+            if (!confirm('Delete?')) return;
+            await supabase.from('programs').delete().eq('id', id);
+            showSuccess('Deleted!');
+            loadProgramsList();
+        }
+
         // Contact functions
         async function updateContact(e) {
             e.preventDefault();
@@ -459,10 +569,12 @@
         }
 
         function loadAllData() {
+            loadProfile();
             loadNewsList();
             loadTeamList();
             loadServicesList();
             loadFacilitiesList();
+            loadProgramsList();
             loadContact();
             document.getElementById('newsDate').valueAsDate = new Date();
         }
