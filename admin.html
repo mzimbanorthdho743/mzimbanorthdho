@@ -563,23 +563,55 @@
         async function updateContact(e) {
             e.preventDefault();
             const id = document.getElementById('contactId').value;
-            await supabase.from('contact').update({
+            
+            const contactData = {
                 address: document.getElementById('contactAddress').value,
                 hours: document.getElementById('contactHours').value,
                 person: document.getElementById('contactPerson').value,
-                phone: document.getElementById('contactPhone').value
-            }).eq('id', id);
-            showSuccess('Contact information updated!');
+                phone: document.getElementById('contactPhone').value,
+                email: document.getElementById('contactEmail').value || null,
+                facebook: document.getElementById('contactFacebook').value || null,
+                twitter: document.getElementById('contactTwitter').value || null,
+                linkedin: document.getElementById('contactLinkedin').value || null
+            };
+            
+            console.log('Updating contact with data:', contactData);
+            
+            const { data, error } = await supabase.from('contact').update(contactData).eq('id', id).select();
+            
+            if (error) {
+                console.error('Error updating contact:', error);
+                alert('Error updating contact: ' + error.message);
+            } else {
+                console.log('Contact updated successfully:', data);
+                showSuccess('Contact information updated!');
+            }
         }
 
         async function loadContact() {
-            const { data } = await supabase.from('contact').select('*').limit(1).single();
-            if (data) {
-                document.getElementById('contactId').value = data.id;
-                document.getElementById('contactAddress').value = data.address;
-                document.getElementById('contactHours').value = data.hours;
-                document.getElementById('contactPerson').value = data.person;
-                document.getElementById('contactPhone').value = data.phone;
+            try {
+                const { data, error } = await supabase.from('contact').select('*').limit(1).single();
+                
+                if (error) {
+                    console.error('Error loading contact:', error);
+                    return;
+                }
+                
+                console.log('Loaded contact data:', data);
+                
+                if (data) {
+                    document.getElementById('contactId').value = data.id;
+                    document.getElementById('contactAddress').value = data.address || '';
+                    document.getElementById('contactHours').value = data.hours || '';
+                    document.getElementById('contactPerson').value = data.person || '';
+                    document.getElementById('contactPhone').value = data.phone || '';
+                    document.getElementById('contactEmail').value = data.email || '';
+                    document.getElementById('contactFacebook').value = data.facebook || '';
+                    document.getElementById('contactTwitter').value = data.twitter || '';
+                    document.getElementById('contactLinkedin').value = data.linkedin || '';
+                }
+            } catch (err) {
+                console.error('Unexpected error loading contact:', err);
             }
         }
 
