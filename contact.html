@@ -130,57 +130,78 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function loadContact() {
-            const { data } = await supabase.from('contact').select('*').limit(1).single();
-            if (data) {
-                document.getElementById('contactAddress').textContent = data.address;
-                document.getElementById('contactHours').textContent = data.hours;
-                document.getElementById('contactPerson').textContent = data.person;
-                document.getElementById('contactPhone').textContent = data.phone;
-
-                // Email
-                if (data.email) {
-                    document.getElementById('emailSection').style.display = 'block';
-                    const emailLink = document.getElementById('contactEmail');
-                    emailLink.textContent = data.email;
-                    emailLink.href = 'mailto:' + data.email;
-                }
-
-                // Social Media Links
-                const socialIcons = [];
+            try {
+                const { data, error } = await supabase.from('contact').select('*').limit(1).single();
                 
-                if (data.facebook) {
-                    socialIcons.push({
-                        url: data.facebook,
-                        icon: '📘',
-                        name: 'Facebook'
-                    });
+                console.log('Contact data loaded:', data);
+                console.log('Error if any:', error);
+                
+                if (error) {
+                    console.error('Error loading contact:', error);
+                    return;
                 }
                 
-                if (data.twitter) {
-                    socialIcons.push({
-                        url: data.twitter,
-                        icon: '✖️',
-                        name: 'X (Twitter)'
-                    });
-                }
-                
-                if (data.linkedin) {
-                    socialIcons.push({
-                        url: data.linkedin,
-                        icon: '💼',
-                        name: 'LinkedIn'
-                    });
-                }
+                if (data) {
+                    document.getElementById('contactAddress').textContent = data.address || 'N/A';
+                    document.getElementById('contactHours').textContent = data.hours || 'N/A';
+                    document.getElementById('contactPerson').textContent = data.person || 'N/A';
+                    document.getElementById('contactPhone').textContent = data.phone || 'N/A';
 
-                if (socialIcons.length > 0) {
-                    document.getElementById('socialSection').style.display = 'block';
-                    document.getElementById('socialIcons').innerHTML = socialIcons.map(social => `
-                        <a href="${social.url}" target="_blank" rel="noopener noreferrer" class="social-icon">
-                            <div class="social-icon-circle">${social.icon}</div>
-                            <span>${social.name}</span>
-                        </a>
-                    `).join('');
+                    // Email
+                    console.log('Email value:', data.email);
+                    if (data.email && data.email.trim() !== '') {
+                        document.getElementById('emailSection').style.display = 'block';
+                        const emailLink = document.getElementById('contactEmail');
+                        emailLink.textContent = data.email;
+                        emailLink.href = 'mailto:' + data.email;
+                    }
+
+                    // Social Media Links
+                    const socialIcons = [];
+                    
+                    console.log('Facebook value:', data.facebook);
+                    if (data.facebook && data.facebook.trim() !== '') {
+                        socialIcons.push({
+                            url: data.facebook,
+                            icon: '📘',
+                            name: 'Facebook'
+                        });
+                    }
+                    
+                    console.log('Twitter value:', data.twitter);
+                    if (data.twitter && data.twitter.trim() !== '') {
+                        socialIcons.push({
+                            url: data.twitter,
+                            icon: '✖️',
+                            name: 'X (Twitter)'
+                        });
+                    }
+                    
+                    console.log('LinkedIn value:', data.linkedin);
+                    if (data.linkedin && data.linkedin.trim() !== '') {
+                        socialIcons.push({
+                            url: data.linkedin,
+                            icon: '💼',
+                            name: 'LinkedIn'
+                        });
+                    }
+
+                    console.log('Social icons array:', socialIcons);
+                    
+                    if (socialIcons.length > 0) {
+                        document.getElementById('socialSection').style.display = 'block';
+                        document.getElementById('socialIcons').innerHTML = socialIcons.map(social => `
+                            <a href="${social.url}" target="_blank" rel="noopener noreferrer" class="social-icon">
+                                <div class="social-icon-circle">${social.icon}</div>
+                                <span>${social.name}</span>
+                            </a>
+                        `).join('');
+                    } else {
+                        console.log('No social media links to display');
+                    }
                 }
+            } catch (err) {
+                console.error('Unexpected error:', err);
             }
         }
         window.addEventListener('load', loadContact);
