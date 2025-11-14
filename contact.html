@@ -28,6 +28,15 @@
         .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-top: 2rem; }
         .contact-item h4 { margin-bottom: 0.5rem; font-size: 1.2rem; }
         .contact-item p { white-space: pre-line; }
+        .contact-item a { color: white; text-decoration: underline; }
+        .social-links { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.3); }
+        .social-links h4 { margin-bottom: 1.5rem; text-align: center; }
+        .social-icons { display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; }
+        .social-icon { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; color: white; text-decoration: none; transition: transform 0.3s; }
+        .social-icon:hover { transform: translateY(-5px); }
+        .social-icon-circle { width: 60px; height: 60px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; transition: background 0.3s; }
+        .social-icon:hover .social-icon-circle { background: rgba(255,255,255,0.3); }
+        .social-icon span { font-size: 0.9rem; font-weight: 500; }
         footer { background: #1a5270; color: white; padding: 2rem; margin-top: 4rem; text-align: center; }
         .footer-links { display: flex; justify-content: center; gap: 2rem; margin: 1rem 0; flex-wrap: wrap; }
         .footer-links a { color: white; text-decoration: none; opacity: 0.8; }
@@ -35,6 +44,7 @@
             .top-bar, .header-content { flex-direction: column; text-align: center; gap: 1rem; padding: 1rem; }
             nav ul { flex-direction: column; width: 100%; }
             nav a { display: block; }
+            .social-icons { gap: 1rem; }
         }
     </style>
 </head>
@@ -58,6 +68,7 @@
                     <li><a href="team.html">DHMT Team</a></li>
                     <li><a href="services.html">Services</a></li>
                     <li><a href="facilities.html">Facilities</a></li>
+                    <li><a href="programs.html">Programs</a></li>
                     <li><a href="contact.html" class="active">Contact</a></li>
                 </ul>
             </nav>
@@ -83,8 +94,20 @@
                 </div>
                 <div class="contact-item">
                     <h4>📞 Main Contact</h4>
-                    <p><span id="contactPerson">Loading...</span><br><span id="contactPhone"></span></p>
+                    <p>
+                        <span id="contactPerson">Loading...</span><br>
+                        <span id="contactPhone"></span>
+                    </p>
                 </div>
+                <div class="contact-item" id="emailSection" style="display: none;">
+                    <h4>📧 Email</h4>
+                    <p><a id="contactEmail" href=""></a></p>
+                </div>
+            </div>
+
+            <div class="social-links" id="socialSection" style="display: none;">
+                <h4>Connect With Us</h4>
+                <div class="social-icons" id="socialIcons"></div>
             </div>
         </div>
     </div>
@@ -95,6 +118,7 @@
             <a href="team.html">Team</a>
             <a href="services.html">Services</a>
             <a href="facilities.html">Facilities</a>
+            <a href="programs.html">Programs</a>
             <a href="contact.html">Contact</a>
         </div>
         <p>&copy; 2025 Mzimba North District Health Office | Ministry of Health, Malawi</p>
@@ -112,6 +136,51 @@
                 document.getElementById('contactHours').textContent = data.hours;
                 document.getElementById('contactPerson').textContent = data.person;
                 document.getElementById('contactPhone').textContent = data.phone;
+
+                // Email
+                if (data.email) {
+                    document.getElementById('emailSection').style.display = 'block';
+                    const emailLink = document.getElementById('contactEmail');
+                    emailLink.textContent = data.email;
+                    emailLink.href = 'mailto:' + data.email;
+                }
+
+                // Social Media Links
+                const socialIcons = [];
+                
+                if (data.facebook) {
+                    socialIcons.push({
+                        url: data.facebook,
+                        icon: '📘',
+                        name: 'Facebook'
+                    });
+                }
+                
+                if (data.twitter) {
+                    socialIcons.push({
+                        url: data.twitter,
+                        icon: '✖️',
+                        name: 'X (Twitter)'
+                    });
+                }
+                
+                if (data.linkedin) {
+                    socialIcons.push({
+                        url: data.linkedin,
+                        icon: '💼',
+                        name: 'LinkedIn'
+                    });
+                }
+
+                if (socialIcons.length > 0) {
+                    document.getElementById('socialSection').style.display = 'block';
+                    document.getElementById('socialIcons').innerHTML = socialIcons.map(social => `
+                        <a href="${social.url}" target="_blank" rel="noopener noreferrer" class="social-icon">
+                            <div class="social-icon-circle">${social.icon}</div>
+                            <span>${social.name}</span>
+                        </a>
+                    `).join('');
+                }
             }
         }
         window.addEventListener('load', loadContact);
