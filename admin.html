@@ -564,28 +564,37 @@
             e.preventDefault();
             const id = document.getElementById('contactId').value;
             
-            const address = document.getElementById('contactAddress').value;
-            const hours = document.getElementById('contactHours').value;
-            const person = document.getElementById('contactPerson').value;
-            const phone = document.getElementById('contactPhone').value;
-            const email = document.getElementById('contactEmail').value || null;
-            const facebook = document.getElementById('contactFacebook').value || null;
-            const twitter = document.getElementById('contactTwitter').value || null;
-            const linkedin = document.getElementById('contactLinkedin').value || null;
+            // Escape single quotes for SQL safety
+            const escapeSQL = (str) => str ? str.replace(/'/g, "''") : '';
             
-            console.log('Updating contact using SQL function...');
+            const address = escapeSQL(document.getElementById('contactAddress').value);
+            const hours = escapeSQL(document.getElementById('contactHours').value);
+            const person = escapeSQL(document.getElementById('contactPerson').value);
+            const phone = escapeSQL(document.getElementById('contactPhone').value);
+            const email = escapeSQL(document.getElementById('contactEmail').value);
+            const facebook = escapeSQL(document.getElementById('contactFacebook').value);
+            const twitter = escapeSQL(document.getElementById('contactTwitter').value);
+            const linkedin = escapeSQL(document.getElementById('contactLinkedin').value);
+            
+            const sqlQuery = `
+                UPDATE contact 
+                SET 
+                    address = '${address}',
+                    hours = '${hours}',
+                    person = '${person}',
+                    phone = '${phone}',
+                    email = ${email ? `'${email}'` : 'NULL'},
+                    facebook = ${facebook ? `'${facebook}'` : 'NULL'},
+                    twitter = ${twitter ? `'${twitter}'` : 'NULL'},
+                    linkedin = ${linkedin ? `'${linkedin}'` : 'NULL'}
+                WHERE id = ${id};
+            `;
+            
+            console.log('Executing SQL:', sqlQuery);
             
             try {
-                const { data, error } = await supabase.rpc('update_contact_info', {
-                    contact_id: parseInt(id),
-                    new_address: address,
-                    new_hours: hours,
-                    new_person: person,
-                    new_phone: phone,
-                    new_email: email,
-                    new_facebook: facebook,
-                    new_twitter: twitter,
-                    new_linkedin: linkedin
+                const { data, error } = await supabase.rpc('exec_contact_update', {
+                    query_text: sqlQuery
                 });
                 
                 if (error) {
@@ -594,7 +603,7 @@
                     return;
                 }
                 
-                console.log('Contact updated successfully:', data);
+                console.log('Contact updated successfully');
                 showSuccess('Contact information updated successfully!');
                 loadContact();
             } catch (err) {
@@ -605,14 +614,19 @@
 
         async function loadContact() {
             try {
-                const { data, error } = await supabase.from('contact').select('*').limit(1).single();
+                // Try to load using regular select with only old fields first
+                const { data, error } = await supabase
+                    .from('contact')
+                    .select('id, address, hours, person, phone')
+                    .limit(1)
+                    .single();
                 
                 if (error) {
                     console.error('Error loading contact:', error);
                     return;
                 }
                 
-                console.log('Loaded contact data:', data);
+                console.log('Loaded basic contact data:', data);
                 
                 if (data) {
                     document.getElementById('contactId').value = data.id;
@@ -620,10 +634,27 @@
                     document.getElementById('contactHours').value = data.hours || '';
                     document.getElementById('contactPerson').value = data.person || '';
                     document.getElementById('contactPhone').value = data.phone || '';
-                    document.getElementById('contactEmail').value = data.email || '';
-                    document.getElementById('contactFacebook').value = data.facebook || '';
-                    document.getElementById('contactTwitter').value = data.twitter || '';
-                    document.getElementById('contactLinkedin').value = data.linkedin || '';
+                    
+                    // Now get the new fields using SQL function
+                    const sqlQuery = `SELECT email, facebook, twitter, linkedin FROM contact WHERE id = ${data.id}`;
+                    const { data: extraData, error: extraError } = await supabase.rpc('exec_contact_query', {
+                        query_text: sqlQuery
+                    });
+                    
+                    if (!extraError && extraData && extraData.length > 0) {
+                        const extra = extraData[0];
+                        document.getElementById('contactEmail').value = extra.email || '';
+                        document.getElementById('contactFacebook').value = extra.facebook || '';
+                        document.getElementById('contactTwitter').value = extra.twitter || '';
+                        document.getElementById('contactLinkedin').value = extra.linkedin || '';
+                        console.log('Loaded extended contact data:', extra);
+                    } else {
+                        console.log('Could not load extended fields, leaving empty');
+                        document.getElementById('contactEmail').value = '';
+                        document.getElementById('contactFacebook').value = '';
+                        document.getElementById('contactTwitter').value = '';
+                        document.getElementById('contactLinkedin').value = '';
+                    }
                 }
             } catch (err) {
                 console.error('Unexpected error loading contact:', err);
