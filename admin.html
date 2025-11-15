@@ -564,79 +564,39 @@
             e.preventDefault();
             const id = document.getElementById('contactId').value;
             
-            // Try using raw SQL instead of the ORM
-            const address = document.getElementById('contactAddress').value.replace(/'/g, "''");
-            const hours = document.getElementById('contactHours').value.replace(/'/g, "''");
-            const person = document.getElementById('contactPerson').value.replace(/'/g, "''");
-            const phone = document.getElementById('contactPhone').value.replace(/'/g, "''");
-            const email = document.getElementById('contactEmail').value.replace(/'/g, "''");
-            const facebook = document.getElementById('contactFacebook').value.replace(/'/g, "''");
-            const twitter = document.getElementById('contactTwitter').value.replace(/'/g, "''");
-            const linkedin = document.getElementById('contactLinkedin').value.replace(/'/g, "''");
+            const address = document.getElementById('contactAddress').value;
+            const hours = document.getElementById('contactHours').value;
+            const person = document.getElementById('contactPerson').value;
+            const phone = document.getElementById('contactPhone').value;
+            const email = document.getElementById('contactEmail').value || null;
+            const facebook = document.getElementById('contactFacebook').value || null;
+            const twitter = document.getElementById('contactTwitter').value || null;
+            const linkedin = document.getElementById('contactLinkedin').value || null;
             
-            const query = `
-                UPDATE contact 
-                SET 
-                    address = '${address}',
-                    hours = '${hours}',
-                    person = '${person}',
-                    phone = '${phone}',
-                    email = ${email ? `'${email}'` : 'NULL'},
-                    facebook = ${facebook ? `'${facebook}'` : 'NULL'},
-                    twitter = ${twitter ? `'${twitter}'` : 'NULL'},
-                    linkedin = ${linkedin ? `'${linkedin}'` : 'NULL'}
-                WHERE id = ${id}
-                RETURNING *;
-            `;
-            
-            console.log('Running query:', query);
+            console.log('Updating contact using SQL function...');
             
             try {
-                const { data, error } = await supabase.rpc('exec_sql', { query });
+                const { data, error } = await supabase.rpc('update_contact_info', {
+                    contact_id: parseInt(id),
+                    new_address: address,
+                    new_hours: hours,
+                    new_person: person,
+                    new_phone: phone,
+                    new_email: email,
+                    new_facebook: facebook,
+                    new_twitter: twitter,
+                    new_linkedin: linkedin
+                });
                 
                 if (error) {
-                    console.error('Error with RPC:', error);
-                    // Fallback to normal update
-                    const contactData = {
-                        address: document.getElementById('contactAddress').value,
-                        hours: document.getElementById('contactHours').value,
-                        person: document.getElementById('contactPerson').value,
-                        phone: document.getElementById('contactPhone').value
-                    };
-                    
-                    // Only add new fields if they have values
-                    const emailVal = document.getElementById('contactEmail').value;
-                    const facebookVal = document.getElementById('contactFacebook').value;
-                    const twitterVal = document.getElementById('contactTwitter').value;
-                    const linkedinVal = document.getElementById('contactLinkedin').value;
-                    
-                    if (emailVal) contactData.email = emailVal;
-                    if (facebookVal) contactData.facebook = facebookVal;
-                    if (twitterVal) contactData.twitter = twitterVal;
-                    if (linkedinVal) contactData.linkedin = linkedinVal;
-                    
-                    console.log('Using fallback update with data:', contactData);
-                    
-                    const { data: updateData, error: updateError } = await supabase
-                        .from('contact')
-                        .update(contactData)
-                        .eq('id', id)
-                        .select();
-                    
-                    if (updateError) {
-                        console.error('Fallback error:', updateError);
-                        alert('Error updating contact: ' + updateError.message);
-                        return;
-                    }
-                    
-                    console.log('Fallback update successful:', updateData);
-                    showSuccess('Contact information updated!');
-                    loadContact();
-                } else {
-                    console.log('RPC update successful:', data);
-                    showSuccess('Contact information updated!');
-                    loadContact();
+                    console.error('Error updating contact:', error);
+                    alert('Error updating contact: ' + error.message);
+                    return;
                 }
+                
+                console.log('Contact updated successfully:', data);
+                showSuccess('Contact information updated successfully!');
+                loadContact();
             } catch (err) {
                 console.error('Unexpected error:', err);
                 alert('Error: ' + err.message);
